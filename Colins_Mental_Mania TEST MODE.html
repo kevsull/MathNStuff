@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lincoln Math Competition: Mental Mania Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+    }
+    .question {
+      margin-bottom: 20px;
+      display: none;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+    }
+    .result {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    #start-btn, #next-btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    #timer {
+      font-size: 20px;
+      color: green;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lincoln Math Competition: Mental Mania Quiz</h1>
+  <button id="start-btn">Start Quiz</button>
+  <form id="quiz"></form>
+  <div id="timer"></div>
+  <button id="next-btn" style="display:none;">Next</button>
+  <div id="results"></div>
+
+  <script>
+    const questions = [
+      "Ann buys 4 juiceboxes for $2 each. Each juicebox contains 10 grams of sugar, 2 cups of snake oil, and 4 cups of dog food. How much money did Ann spend in total?",
+      "What is (7 + 7 x 7)/7 + 7?",
+      "10 times my favorite number plus 6 is 56. What is my favorite number?",
+      "Find the mode times the median of the following set of 8 numbers: 1, 12, 13, 13, 13, 15, 15, 18",
+      "If Cam is 5 years older than Bob, how old will Bob be the first time the product of their ages is 50?",
+      "Bob tries to divide 16 by 8 on his calculator, but he hits 'multiply' instead of 'divide'. What is the difference between the answer he got and what he would have gotten if he had clicked divide?",
+      "There is a 50% chance of there being a rainbow on a rainy day, but only a 10% chance on a non-rainy day. If on any given day, there is a 30% chance that it rains, what is the probability of there being a rainbow tomorrow?",
+      "What is the perimeter of a rectangle with side lengths 5 and 10 with 2x2 squares cut out from each of its corners?",
+      "Bob has 2 quarters, 4 dimes, and 10 nickels. How many cents does Bob have?",
+      "Andrew goes to a chess competition, and at this competition each person fist bumps every other person once at the start and once at the end. If there are 5 people other than Andrew at the competition, how many fist bumps occur?"
+    ];
+
+    const answers = ["8", "15", "5", "26", "5", "126", "22%", "30", "140", "30"];
+
+    let currentQuestion = 0;
+    let score = 0;
+    const quizForm = document.getElementById("quiz");
+    const timerDisplay = document.getElementById("timer");
+    const startBtn = document.getElementById("start-btn");
+    const nextBtn = document.getElementById("next-btn");
+    const resultsDiv = document.getElementById("results");
+    let currentInterval;
+    let currentUtterance;
+
+    function speak(text, times = 2, callback) {
+      const synth = window.speechSynthesis;
+      let count = 0;
+      function speakLoop() {
+        if (count < times) {
+          currentUtterance = new SpeechSynthesisUtterance(text);
+          currentUtterance.onend = () => {
+            count++;
+            speakLoop();
+          };
+          synth.speak(currentUtterance);
+        } else {
+          callback();
+        }
+      }
+      speakLoop();
+    }
+
+    function stopSpeaking() {
+      const synth = window.speechSynthesis;
+      if (synth.speaking) synth.cancel();
+    }
+
+    function showQuestion(index) {
+      quizForm.innerHTML = "";
+      const qDiv = document.createElement("div");
+      qDiv.className = "question";
+      const label = document.createElement("label");
+      label.textContent = `${index + 1}. ${questions[index]}`;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.name = `q${index+1}`;
+      input.addEventListener("input", () => {
+        if (input.value.trim()) {
+          stopSpeaking();
+          nextBtn.style.display = "inline";
+        } else {
+          nextBtn.style.display = "none";
+        }
+      });
+      qDiv.appendChild(label);
+      qDiv.appendChild(input);
+      quizForm.appendChild(qDiv);
+      qDiv.style.display = "block";
+      speak(questions[index], 2, () => startTimer(15));
+    }
+
+    function startTimer(seconds) {
+      let timeLeft = seconds;
+      timerDisplay.textContent = `⏳ ${timeLeft} seconds remaining...`;
+      currentInterval = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = `⏳ ${timeLeft} seconds remaining...`;
+        if (timeLeft <= 0) {
+          clearInterval(currentInterval);
+          timerDisplay.textContent = "⏱ Time's up!";
+        }
+      }, 1000);
+    }
+
+    function checkAnswers() {
+      resultsDiv.innerHTML = "<h2>Results:</h2>";
+      const form = document.forms["quiz"];
+      answers.forEach((answer, i) => {
+        const userAnswer = form[`q${i+1}`]?.value.trim() || "";
+        const isCorrect = userAnswer === answer;
+        if (isCorrect) score++;
+        resultsDiv.innerHTML += `<p>Q${i+1}: ${isCorrect ? '✅ Correct' : `❌ Incorrect (Correct: ${answer})`}</p>`;
+      });
+      resultsDiv.innerHTML += `<p><strong>Total Score: ${score} / 10</strong></p>`;
+    }
+
+    startBtn.addEventListener("click", () => {
+      startBtn.style.display = "none";
+      showQuestion(currentQuestion);
+    });
+
+    nextBtn.addEventListener("click", () => {
+      clearInterval(currentInterval);
+      nextBtn.style.display = "none";
+      currentQuestion++;
+      if (currentQuestion < questions.length) {
+        showQuestion(currentQuestion);
+      } else {
+        checkAnswers();
+        timerDisplay.textContent = "";
+      }
+    });
+  </script>
+</body>
+</html>
